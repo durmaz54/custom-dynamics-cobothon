@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (10.3-2021.10)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := COBOTHON DNM
+BUILD_ARTIFACT_NAME := cobot
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-COBOTHON\ DNM.elf \
+cobot.elf \
 
 MAP_FILES += \
-COBOTHON\ DNM.map \
+cobot.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-COBOTHON\ DNM.list \
+cobot.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: COBOTHON\ DNM.elf secondary-outputs
+main-build: cobot.elf secondary-outputs
 
 # Tool invocations
-COBOTHON\ DNM.elf COBOTHON\ DNM.map: $(OBJS) $(USER_OBJS) C:\Users\Ferhat\ ATASOY\Documents\CubeIde\ Projeleri\COBOTHON\ DNM\STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "COBOTHON DNM.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Ferhat ATASOY\Documents\CubeIde Projeleri\COBOTHON DNM\STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="COBOTHON DNM.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+cobot.elf cobot.map: $(OBJS) $(USER_OBJS) /home/durmaz/STM32CubeIDE/workspace_1.13.2/cobot/STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "cobot.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/durmaz/STM32CubeIDE/workspace_1.13.2/cobot/STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="cobot.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-COBOTHON\ DNM.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "COBOTHON DNM.list"
+cobot.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "cobot.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) COBOTHON\ DNM.elf COBOTHON\ DNM.list COBOTHON\ DNM.map COBOTHON\\ DNM.elf default.size.stdout
+	-$(RM) cobot.elf cobot.list cobot.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

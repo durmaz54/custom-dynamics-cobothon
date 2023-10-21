@@ -31,6 +31,24 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define MAX	999
+#define MED	499
+#define MIN	0
+
+#define DERECE_0_60		5
+#define DERECE_60_120	4
+#define DERECE_120_180	6
+#define DERECE_180_240	2
+#define DERECE_240_300	3
+#define DERECE_300_360	1
+
+
+/*GPIOC u,v,w hall sensor pin*/
+#define 	HALL_PIN_U	GPIO_PIN_5
+#define 	HALL_PIN_V	GPIO_PIN_6
+#define 	HALL_PIN_W	GPIO_PIN_8
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -39,20 +57,90 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef hlpuart1;
+
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim15;
 
 /* USER CODE BEGIN PV */
+
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_LPUART1_UART_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
+
+int8_t readHallPosition(){
+	/*	0b0000 0uvw	*/
+
+	int8_t position = 0x00;
+	int8_t u_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_U);
+	int8_t v_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_V);
+	int8_t w_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_W);
+
+	position |= w_state;
+	position |= (v_state << 1);
+	position |= (u_state << 2);
+
+	return position;
+}
+
+void setMotorPosition(int8_t pos){
+
+	if(pos == DERECE_0_60){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+		  HAL_Delay(1);
+	}
+	else if (pos == DERECE_60_120){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+		  HAL_Delay(1);
+
+	}
+	else if (pos == DERECE_120_180){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+		  HAL_Delay(1);
+
+	}
+	else if (pos == DERECE_180_240){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+		  HAL_Delay(1);
+	}
+	else if (pos == DERECE_240_300){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+		  HAL_Delay(1);
+
+	}
+	else if (pos == DERECE_300_360){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+		  HAL_Delay(1);
+
+	}
+
+}
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
 
 /* USER CODE END 0 */
 
@@ -84,66 +172,76 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_LPUART1_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
-  uint16_t phaseDelay = 1;
+
+
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+
+
+  /*
+while(1){
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,0);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,0);
+}*/
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   while (1)
   {
+
+	  int8_t position = readHallPosition();
+	  setMotorPosition(DERECE_0_60);
+	  setMotorPosition(DERECE_60_120);
+	  setMotorPosition(DERECE_120_180);
+	  setMotorPosition(DERECE_180_240);
+	  setMotorPosition(DERECE_240_300);
+	  setMotorPosition(DERECE_300_360);
+
+
+	  /*
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
+	  HAL_Delay(1);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+	  HAL_Delay(1);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+	  HAL_Delay(1);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
+	  HAL_Delay(1);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+	  HAL_Delay(1);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+	  HAL_Delay(1);
+
+*/
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  IN_U_PIN_ON;
-	  IN_V_PIN_OFF;
-	  IN_W_PIN_OFF;
-	  EN_U_PIN_OFF;
-	  EN_V_PIN_ON;
-	  EN_W_PIN_OFF;
-	  HAL_Delay(phaseDelay);
-
-	  IN_U_PIN_ON;
-	  IN_V_PIN_OFF;
-	  IN_W_PIN_OFF;
-	  EN_U_PIN_OFF;
-	  EN_V_PIN_OFF;
-	  EN_W_PIN_ON;
-	  HAL_Delay(phaseDelay);
-
-	  IN_U_PIN_OFF;
-	  IN_V_PIN_ON;
-	  IN_W_PIN_OFF;
-	  EN_U_PIN_OFF;
-	  EN_V_PIN_OFF;
-	  EN_W_PIN_ON;
-	  HAL_Delay(phaseDelay);
-
-	  IN_U_PIN_OFF;
-	  IN_V_PIN_ON;
-	  IN_W_PIN_OFF;
-	  EN_U_PIN_ON;
-	  EN_V_PIN_OFF;
-	  EN_W_PIN_OFF;
-	  HAL_Delay(phaseDelay);
-
-	  IN_U_PIN_OFF;
-	  IN_V_PIN_OFF;
-	  IN_W_PIN_ON;
-	  EN_U_PIN_ON;
-	  EN_V_PIN_OFF;
-	  EN_W_PIN_OFF;
-	  HAL_Delay(phaseDelay);
-
-	  IN_U_PIN_OFF;
-	  IN_V_PIN_OFF;
-	  IN_W_PIN_ON;
-	  EN_U_PIN_OFF;
-	  EN_V_PIN_ON;
-	  EN_W_PIN_OFF;
-	  HAL_Delay(phaseDelay);
-
   }
   /* USER CODE END 3 */
 }
@@ -195,6 +293,189 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief LPUART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LPUART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN LPUART1_Init 0 */
+
+  /* USER CODE END LPUART1_Init 0 */
+
+  /* USER CODE BEGIN LPUART1_Init 1 */
+
+  /* USER CODE END LPUART1_Init 1 */
+  hlpuart1.Instance = LPUART1;
+  hlpuart1.Init.BaudRate = 115200;
+  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
+  hlpuart1.Init.StopBits = UART_STOPBITS_1;
+  hlpuart1.Init.Parity = UART_PARITY_NONE;
+  hlpuart1.Init.Mode = UART_MODE_TX_RX;
+  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&hlpuart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LPUART1_Init 2 */
+
+  /* USER CODE END LPUART1_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 16;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 999;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 49;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
+  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
+  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+  sBreakDeadTimeConfig.Break2Filter = 0;
+  sBreakDeadTimeConfig.Break2AFMode = TIM_BREAK_AFMODE_INPUT;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief TIM15 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM15_Init(void)
+{
+
+  /* USER CODE BEGIN TIM15_Init 0 */
+
+  /* USER CODE END TIM15_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM15_Init 1 */
+
+  /* USER CODE END TIM15_Init 1 */
+  htim15.Instance = TIM15;
+  htim15.Init.Prescaler = 699;
+  htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim15.Init.Period = 999;
+  htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim15.Init.RepetitionCounter = 0;
+  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim15) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim15, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM15_Init 2 */
+
+  /* USER CODE END TIM15_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -202,31 +483,39 @@ void SystemClock_Config(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, EN_U_PIN_Pin|EN_V_PIN_Pin|EN_W_PIN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, IN_U_PIN_Pin|IN_V_PIN_Pin|IN_W_PIN_Pin, GPIO_PIN_RESET);
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : EN_U_PIN_Pin EN_V_PIN_Pin EN_W_PIN_Pin */
-  GPIO_InitStruct.Pin = EN_U_PIN_Pin|EN_V_PIN_Pin|EN_W_PIN_Pin;
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IN_U_PIN_Pin IN_V_PIN_Pin IN_W_PIN_Pin */
-  GPIO_InitStruct.Pin = IN_U_PIN_Pin|IN_V_PIN_Pin|IN_W_PIN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /*Configure GPIO pins : PC5 PC6 PC8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

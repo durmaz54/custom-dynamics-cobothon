@@ -47,58 +47,9 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 
-// INU -> PA8
-#define IN_U_PIN        GPIO_PIN_8
-#define IN_U_PORT       GPIOA
-
-// ENU -> PB13
-#define EN_U_PIN        GPIO_PIN_13
-#define EN_U_PORT       GPIOB
-
-// INV -> PA9
-#define IN_V_PIN        GPIO_PIN_9
-#define IN_V_PORT       GPIOA
-
-// ENV -> PB14
-#define EN_V_PIN        GPIO_PIN_14
-#define EN_V_PORT       GPIOB
-
-// INW -> PA10
-#define IN_W_PIN        GPIO_PIN_10
-#define IN_W_PORT       GPIOA
-
-// ENW -> PB15
-#define EN_W_PIN        GPIO_PIN_15
-#define EN_W_PORT       GPIOB
-
-
-#define IN_U_PIN_ON				HAL_GPIO_WritePin(IN_U_PORT, IN_U_PIN, GPIO_PIN_SET)
-#define IN_V_PIN_ON				HAL_GPIO_WritePin(IN_V_PORT, IN_V_PIN, GPIO_PIN_SET)
-#define IN_W_PIN_ON				HAL_GPIO_WritePin(IN_W_PORT, IN_W_PIN, GPIO_PIN_SET)
-
-#define IN_U_PIN_OFF			HAL_GPIO_WritePin(IN_U_PORT, IN_U_PIN, GPIO_PIN_RESET)
-#define IN_V_PIN_OFF			HAL_GPIO_WritePin(IN_V_PORT, IN_V_PIN, GPIO_PIN_RESET)
-#define IN_W_PIN_OFF			HAL_GPIO_WritePin(IN_W_PORT, IN_W_PIN, GPIO_PIN_RESET)
-
-#define IN_U_PIN_TOGGLE			HAL_GPIO_TogglePin(IN_U_PORT, IN_U_PIN)
-#define IN_V_PIN_TOGGLE			HAL_GPIO_TogglePin(IN_V_PORT, IN_V_PIN)
-#define IN_W_PIN_TOGGLE			HAL_GPIO_TogglePin(IN_W_PORT, IN_W_PIN)
-
-
-#define EN_U_PIN_ON				HAL_GPIO_WritePin(EN_U_PORT, EN_U_PIN, GPIO_PIN_SET)
-#define EN_V_PIN_ON				HAL_GPIO_WritePin(EN_V_PORT, EN_V_PIN, GPIO_PIN_SET)
-#define EN_W_PIN_ON				HAL_GPIO_WritePin(EN_W_PORT, EN_W_PIN, GPIO_PIN_SET)
-
-#define EN_U_PIN_OFF			HAL_GPIO_WritePin(EN_U_PORT, EN_U_PIN, GPIO_PIN_RESET)
-#define EN_V_PIN_OFF			HAL_GPIO_WritePin(EN_V_PORT, EN_V_PIN, GPIO_PIN_RESET)
-#define EN_W_PIN_OFF			HAL_GPIO_WritePin(EN_W_PORT, EN_W_PIN, GPIO_PIN_RESET)
-
-#define EN_U_PIN_TOGGLE			HAL_GPIO_TogglePin(EN_U_PORT, EN_U_PIN)
-#define EN_V_PIN_TOGGLE			HAL_GPIO_TogglePin(EN_V_PORT, EN_V_PIN)
-#define EN_W_PIN_TOGGLE			HAL_GPIO_TogglePin(EN_W_PORT, EN_W_PIN)
-
-
 /* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
@@ -108,18 +59,20 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define EN_U_PIN_Pin GPIO_PIN_13
-#define EN_U_PIN_GPIO_Port GPIOB
-#define EN_V_PIN_Pin GPIO_PIN_14
-#define EN_V_PIN_GPIO_Port GPIOB
-#define EN_W_PIN_Pin GPIO_PIN_15
-#define EN_W_PIN_GPIO_Port GPIOB
-#define IN_U_PIN_Pin GPIO_PIN_8
-#define IN_U_PIN_GPIO_Port GPIOA
-#define IN_V_PIN_Pin GPIO_PIN_9
-#define IN_V_PIN_GPIO_Port GPIOA
-#define IN_W_PIN_Pin GPIO_PIN_10
-#define IN_W_PIN_GPIO_Port GPIOA
+#define B1_Pin GPIO_PIN_13
+#define B1_GPIO_Port GPIOC
+#define LPUART1_TX_Pin GPIO_PIN_2
+#define LPUART1_TX_GPIO_Port GPIOA
+#define LPUART1_RX_Pin GPIO_PIN_3
+#define LPUART1_RX_GPIO_Port GPIOA
+#define LD2_Pin GPIO_PIN_5
+#define LD2_GPIO_Port GPIOA
+#define T_SWDIO_Pin GPIO_PIN_13
+#define T_SWDIO_GPIO_Port GPIOA
+#define T_SWCLK_Pin GPIO_PIN_14
+#define T_SWCLK_GPIO_Port GPIOA
+#define T_SWO_Pin GPIO_PIN_3
+#define T_SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
