@@ -72,9 +72,9 @@ int32_t deltaMotorPos = 0;
 int32_t motorRpm=0;
 
 struct pid pidMotor={
-		.Kp = 0.5,
+		.Kp = 1,
 		.Ki = 0.1,
-		.Kd = 0.2,
+		.Kd = 0,
 		.integral = 0,
 		.prev_error = 0
 };
@@ -221,7 +221,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	if (htim->Instance == htim6.Instance) {
 
-		setpointRpm =  400;//getSpeed();
+		setpointRpm =  getSpeed();
 
 		motorRpm = (motorpos - deltaMotorPos) * 142; // 6000/42 1dk/tamtur
 	    deltaMotorPos = motorpos;
