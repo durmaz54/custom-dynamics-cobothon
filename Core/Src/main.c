@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "encoder_init.h"
 #include "encoder.h"
+#include "dz_pid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,9 +34,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define MAX	1000
-#define MED	499
-#define MIN	0
+#define MAX_PWM	999
+#define MED_PWM	499
+#define MIN_PWM	0
 
 
 
@@ -52,16 +53,43 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim15;
 
 /* USER CODE BEGIN PV */
+as5047p_init_t as5047;
+
 int8_t positionx = 0;
+int8_t prev_positionx = 0;
+
+int32_t motorpos = 0;
+int32_t deltaMotorPos = 0;
+int32_t motorRpm=0;
+
+struct pid pidMotor={
+		.Kp = 0.5,
+		.Ki = 0.1,
+		.Kd = 0.2,
+		.integral = 0,
+		.prev_error = 0
+};
+
+
 int8_t u_state=0;
 int8_t v_state;
 int8_t w_state;
+
+int16_t setpointRpm = 0;
+
+int16_t MAX = 0;
+int16_t MED = MED_PWM;
+int16_t MIN = MIN_PWM;
+
 
 typedef enum{
 	pos1 = 5,
@@ -82,6 +110,8 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM15_Init(void);
 static void MX_SPI3_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 int8_t readHallPosition(){
@@ -109,6 +139,10 @@ int8_t readHallPosition(){
 		positionx = pos6;
 	}
 
+	if(prev_positionx != positionx){
+		motorpos += 1;
+	}
+	prev_positionx = positionx;
 
 	return positionx;
 }
@@ -170,6 +204,31 @@ else{
 
 }
 
+}
+
+uint16_t getSpeed(void)
+{
+  HAL_ADC_Start(&hadc1);
+  HAL_ADC_PollForConversion(&hadc1, 100);
+  uint32_t adc_val = HAL_ADC_GetValue(&hadc1);
+  HAL_ADC_Stop(&hadc1);
+
+  return adc_val * 0.244140625; // adc_val*(1000%4096)
+}
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+
+	if (htim->Instance == htim6.Instance) {
+
+		setpointRpm =  400;//getSpeed();
+
+		motorRpm = (motorpos - deltaMotorPos) * 142; // 6000/42 1dk/tamtur
+	    deltaMotorPos = motorpos;
+
+	    MAX = pidCalculate(&pidMotor, setpointRpm, motorRpm);
+
+	}
 
 }
 
@@ -178,37 +237,7 @@ else{
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint16_t adrr;
 
-#define BIT_MODITY(src, i, val) ((src) ^= (-(val) ^ (src)) & (1UL << (i)))
-#define BIT_READ(src, i) (((src) >> (i)&1U))
-#define BIT_TOGGLE(src, i) ((src) ^= 1UL << (i))
-
-static uint8_t is_evenParity(uint16_t data)
-{
-  uint8_t shift = 1;
-  while (shift < (sizeof(data) * 8))
-  {
-    data ^= (data >> shift);
-    shift <<= 1;
-  }
-  return !(data & 0x1);
-}
-
-uint16_t calcAdress(uint16_t data)
-{
-  uint16_t frame = data & 0x3FFF;
-
-  /* Data frame bit 14 always low(0). */
-  BIT_MODITY(frame, 14, 0);
-
-  /* Parity bit(even) calculated on the lower 15 bits. */
-  if (!is_evenParity(frame)){
-	BIT_TOGGLE(frame, 15);
-  }
-
-  return frame;
-}
 
 /* USER CODE END 0 */
 
@@ -243,6 +272,8 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM15_Init();
   MX_SPI3_Init();
+  MX_ADC1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -258,53 +289,23 @@ int main(void)
   HAL_Delay(500);
 
 
-  //as5047p_init_t asp;
-  //encoder_init(&asp);
-  //as5047p_config(&asp, 0b00100101, 0x0007);
-  //as5047p_setZero(&asp, 1052);
 
-  as5047p_init_t a;
-  encoder_init(&a);
-  as5047p_config(&a, 0x0025, 0x0007);
-  as5047p_setZero(&a, 1052);
-  as5047p_readData(&a, AS5047P_SETTINGS1);
-  as5047p_readData(&a, AS5047P_SETTINGS2);
+  encoder_init(&as5047);
+  as5047p_config(&as5047, 0x0025, 0x0007);
+  as5047p_setZero(&as5047, 1052);
+  as5047p_readData(&as5047, AS5047P_SETTINGS1);
+  as5047p_readData(&as5047, AS5047P_SETTINGS2);
 
+
+  HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	 positionx = readHallPosition();
 	 setMotorPosition(positionx);
-/*
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
-	  HAL_Delay(1);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
-	  HAL_Delay(1);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
-	  HAL_Delay(1);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
-	  HAL_Delay(1);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
-	  HAL_Delay(1);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
-	  HAL_Delay(1);
-*/
 
     /* USER CODE END WHILE */
 
@@ -360,6 +361,74 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_MultiModeTypeDef multimode = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.GainCompensation = 0;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the ADC multi-mode
+  */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
   * @brief SPI3 Initialization Function
   * @param None
   * @retval None
@@ -378,7 +447,7 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
@@ -386,7 +455,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi3.Init.CRCPolynomial = 10;
+  hspi3.Init.CRCPolynomial = 7;
   hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi3.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi3) != HAL_OK)
@@ -486,6 +555,44 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
   HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 26;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 65535;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
