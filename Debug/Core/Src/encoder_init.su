@@ -1,0 +1,4 @@
+../Core/Src/encoder_init.c:15:6:spi_write	24	static
+../Core/Src/encoder_init.c:27:10:spi_read	24	static
+../Core/Src/encoder_init.c:41:6:delay	8	static
+../Core/Src/encoder_init.c:47:6:encoder_init	16	static

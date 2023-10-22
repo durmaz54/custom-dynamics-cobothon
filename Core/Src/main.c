@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "encoder_init.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,16 +33,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define MAX	999
+#define MAX	1000
 #define MED	499
 #define MIN	0
 
-#define DERECE_0_60		5
-#define DERECE_60_120	4
-#define DERECE_120_180	6
-#define DERECE_180_240	2
-#define DERECE_240_300	3
-#define DERECE_300_360	1
 
 
 /*GPIOC u,v,w hall sensor pin*/
@@ -57,81 +52,124 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef hlpuart1;
+SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim15;
 
 /* USER CODE BEGIN PV */
+int8_t positionx = 0;
+int8_t u_state=0;
+int8_t v_state;
+int8_t w_state;
 
+typedef enum{
+	pos1 = 5,
+	pos2 = 4,
+	pos3 = 3,
+	pos4 = 2,
+	pos5 = 1,
+	pos6 = 0
+}Poss;
+
+uint16_t reading = 0x0000;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_LPUART1_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM15_Init(void);
+static void MX_SPI3_Init(void);
 /* USER CODE BEGIN PFP */
 
 int8_t readHallPosition(){
 	/*	0b0000 0uvw	*/
 
-	int8_t position = 0x00;
-	int8_t u_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_U);
-	int8_t v_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_V);
-	int8_t w_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_W);
+	Poss positionx = 0;
+	 u_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_U);
+	 v_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_V);
+	 w_state = HAL_GPIO_ReadPin(GPIOC, HALL_PIN_W);
 
-	position |= w_state;
-	position |= (v_state << 1);
-	position |= (u_state << 2);
+	if((u_state == 1) && (v_state == 0) && (w_state == 1)){
+		positionx = pos1;
+	}
+	else if((u_state == 1) && (v_state == 0) && (w_state == 0)){
+		positionx = pos2;
+	}
+	else if((u_state == 1) && (v_state == 1) && (w_state == 0)){
+		positionx = pos3;
+	}
+	else if((u_state == 0) && (v_state == 1) && (w_state == 0)){
+		positionx = pos4;
+	}else if((u_state == 0) && (v_state == 1) && (w_state == 1)){
+		positionx = pos5;
+	}else if((u_state == 0) && (v_state == 0) && (w_state == 1)){
+		positionx = pos6;
+	}
 
-	return position;
+
+	return positionx;
 }
 
 void setMotorPosition(int8_t pos){
 
-	if(pos == DERECE_0_60){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
-		  HAL_Delay(1);
-	}
-	else if (pos == DERECE_60_120){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
-		  HAL_Delay(1);
+if(pos == pos1)
+{
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN); //2-4
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
 
-	}
-	else if (pos == DERECE_120_180){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
-		  HAL_Delay(1);
+}
+else if(pos == pos2){//
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN); // 2-6
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
 
-	}
-	else if (pos == DERECE_180_240){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
-		  HAL_Delay(1);
-	}
-	else if (pos == DERECE_240_300){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
-		  HAL_Delay(1);
 
-	}
-	else if (pos == DERECE_300_360){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MIN);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
-		  HAL_Delay(1);
+}
+else if(pos == pos3){
 
-	}
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED); //1-6
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
+
+
+}
+else if(pos == pos4){
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);//1-5
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
+
+
+
+}
+else if(pos == pos5){
+
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);//3-5
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+
+
+
+}
+else if(pos == pos6){// 3-4
+
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MAX);
+	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MIN);
+
+
+}
+else{
+	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MED);
+	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MED);
+	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
+	HAL_Delay(1);
+
+}
+
 
 }
 
@@ -140,7 +178,37 @@ void setMotorPosition(int8_t pos){
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+uint16_t adrr;
 
+#define BIT_MODITY(src, i, val) ((src) ^= (-(val) ^ (src)) & (1UL << (i)))
+#define BIT_READ(src, i) (((src) >> (i)&1U))
+#define BIT_TOGGLE(src, i) ((src) ^= 1UL << (i))
+
+static uint8_t is_evenParity(uint16_t data)
+{
+  uint8_t shift = 1;
+  while (shift < (sizeof(data) * 8))
+  {
+    data ^= (data >> shift);
+    shift <<= 1;
+  }
+  return !(data & 0x1);
+}
+
+uint16_t calcAdress(uint16_t data)
+{
+  uint16_t frame = data & 0x3FFF;
+
+  /* Data frame bit 14 always low(0). */
+  BIT_MODITY(frame, 14, 0);
+
+  /* Parity bit(even) calculated on the lower 15 bits. */
+  if (!is_evenParity(frame)){
+	BIT_TOGGLE(frame, 15);
+  }
+
+  return frame;
+}
 
 /* USER CODE END 0 */
 
@@ -172,9 +240,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_LPUART1_UART_Init();
   MX_TIM1_Init();
   MX_TIM15_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -186,14 +254,21 @@ int main(void)
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
+  HAL_Delay(500);
 
 
-  /*
-while(1){
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,0);
-	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,0);
-}*/
+  //as5047p_init_t asp;
+  //encoder_init(&asp);
+  //as5047p_config(&asp, 0b00100101, 0x0007);
+  //as5047p_setZero(&asp, 1052);
+
+  as5047p_init_t a;
+  encoder_init(&a);
+  as5047p_config(&a, 0x0025, 0x0007);
+  as5047p_setZero(&a, 1052);
+  as5047p_readData(&a, AS5047P_SETTINGS1);
+  as5047p_readData(&a, AS5047P_SETTINGS2);
 
   /* USER CODE END 2 */
 
@@ -202,16 +277,9 @@ while(1){
   while (1)
   {
 
-	  int8_t position = readHallPosition();
-	  setMotorPosition(DERECE_0_60);
-	  setMotorPosition(DERECE_60_120);
-	  setMotorPosition(DERECE_120_180);
-	  setMotorPosition(DERECE_180_240);
-	  setMotorPosition(DERECE_240_300);
-	  setMotorPosition(DERECE_300_360);
-
-
-	  /*
+	 positionx = readHallPosition();
+	 setMotorPosition(positionx);
+/*
 	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1,MAX);
 	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
 	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MED);
@@ -236,7 +304,6 @@ while(1){
 	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2,MIN);
 	  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3,MAX);
 	  HAL_Delay(1);
-
 */
 
     /* USER CODE END WHILE */
@@ -293,49 +360,42 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief LPUART1 Initialization Function
+  * @brief SPI3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_LPUART1_UART_Init(void)
+static void MX_SPI3_Init(void)
 {
 
-  /* USER CODE BEGIN LPUART1_Init 0 */
+  /* USER CODE BEGIN SPI3_Init 0 */
 
-  /* USER CODE END LPUART1_Init 0 */
+  /* USER CODE END SPI3_Init 0 */
 
-  /* USER CODE BEGIN LPUART1_Init 1 */
+  /* USER CODE BEGIN SPI3_Init 1 */
 
-  /* USER CODE END LPUART1_Init 1 */
-  hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 115200;
-  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
-  hlpuart1.Init.StopBits = UART_STOPBITS_1;
-  hlpuart1.Init.Parity = UART_PARITY_NONE;
-  hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 10;
+  hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi3.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN LPUART1_Init 2 */
+  /* USER CODE BEGIN SPI3_Init 2 */
 
-  /* USER CODE END LPUART1_Init 2 */
+  /* USER CODE END SPI3_Init 2 */
 
 }
 
@@ -491,9 +551,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -501,18 +562,34 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /*Configure GPIO pin : LPUART1_RX_Pin */
+  GPIO_InitStruct.Pin = LPUART1_RX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Alternate = GPIO_AF12_LPUART1;
+  HAL_GPIO_Init(LPUART1_RX_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA5 PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC5 PC6 PC8 */
   GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PD2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

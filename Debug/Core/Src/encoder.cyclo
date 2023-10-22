@@ -1,0 +1,11 @@
+../Core/Src/encoder.c:58:6:as5047p_sendData	2
+../Core/Src/encoder.c:81:10:as5047p_readData	1
+../Core/Src/encoder.c:94:13:as5047p_sendCommand	2
+../Core/Src/encoder.c:115:13:as5047p_nop	1
+../Core/Src/encoder.c:124:16:is_evenParity	2
+../Core/Src/encoder.c:139:6:as5047p_config	1
+../Core/Src/encoder.c:157:10:as5047p_getErrorStatus	1
+../Core/Src/encoder.c:172:8:as5047p_getPosition	3
+../Core/Src/encoder.c:204:8:as5047p_getAngle	2
+../Core/Src/encoder.c:226:6:as5047p_setZero	1
+../Core/Src/encoder.c:242:6:as5047p_reset	1

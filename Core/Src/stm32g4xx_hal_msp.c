@@ -84,77 +84,68 @@ void HAL_MspInit(void)
 }
 
 /**
-* @brief UART MSP Initialization
+* @brief SPI MSP Initialization
 * This function configures the hardware resources used in this example
-* @param huart: UART handle pointer
+* @param hspi: SPI handle pointer
 * @retval None
 */
-void HAL_UART_MspInit(UART_HandleTypeDef* huart)
+void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(huart->Instance==LPUART1)
+  if(hspi->Instance==SPI3)
   {
-  /* USER CODE BEGIN LPUART1_MspInit 0 */
+  /* USER CODE BEGIN SPI3_MspInit 0 */
 
-  /* USER CODE END LPUART1_MspInit 0 */
-
-  /** Initializes the peripherals clocks
-  */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LPUART1;
-    PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
+  /* USER CODE END SPI3_MspInit 0 */
     /* Peripheral clock enable */
-    __HAL_RCC_LPUART1_CLK_ENABLE();
+    __HAL_RCC_SPI3_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**LPUART1 GPIO Configuration
-    PA2     ------> LPUART1_TX
-    PA3     ------> LPUART1_RX
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    /**SPI3 GPIO Configuration
+    PC10     ------> SPI3_SCK
+    PC11     ------> SPI3_MISO
+    PC12     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = LPUART1_TX_Pin|LPUART1_RX_Pin;
+    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF12_LPUART1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN LPUART1_MspInit 1 */
+  /* USER CODE BEGIN SPI3_MspInit 1 */
 
-  /* USER CODE END LPUART1_MspInit 1 */
+  /* USER CODE END SPI3_MspInit 1 */
   }
 
 }
 
 /**
-* @brief UART MSP De-Initialization
+* @brief SPI MSP De-Initialization
 * This function freeze the hardware resources used in this example
-* @param huart: UART handle pointer
+* @param hspi: SPI handle pointer
 * @retval None
 */
-void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
+void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
 {
-  if(huart->Instance==LPUART1)
+  if(hspi->Instance==SPI3)
   {
-  /* USER CODE BEGIN LPUART1_MspDeInit 0 */
+  /* USER CODE BEGIN SPI3_MspDeInit 0 */
 
-  /* USER CODE END LPUART1_MspDeInit 0 */
+  /* USER CODE END SPI3_MspDeInit 0 */
     /* Peripheral clock disable */
-    __HAL_RCC_LPUART1_CLK_DISABLE();
+    __HAL_RCC_SPI3_CLK_DISABLE();
 
-    /**LPUART1 GPIO Configuration
-    PA2     ------> LPUART1_TX
-    PA3     ------> LPUART1_RX
+    /**SPI3 GPIO Configuration
+    PC10     ------> SPI3_SCK
+    PC11     ------> SPI3_MISO
+    PC12     ------> SPI3_MOSI
     */
-    HAL_GPIO_DeInit(GPIOA, LPUART1_TX_Pin|LPUART1_RX_Pin);
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
 
-  /* USER CODE BEGIN LPUART1_MspDeInit 1 */
+  /* USER CODE BEGIN SPI3_MspDeInit 1 */
 
-  /* USER CODE END LPUART1_MspDeInit 1 */
+  /* USER CODE END SPI3_MspDeInit 1 */
   }
 
 }
